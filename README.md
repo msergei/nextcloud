@@ -7,7 +7,7 @@ Nextcloud Server uses official Nextclod docker images, but additional it uses ng
 
 ## How to install?
 
-- You need install docker and docker-compose. Please use official manuals.
+- You need to install docker and docker-compose. Please use official manuals.
 
 - Download or clone repo:
 ```
