@@ -7,10 +7,8 @@ services:
     restart: always
     volumes:
       - db:/var/lib/mysql
-    environment:
-      - MYSQL_ROOT_PASSWORD=nextcloud
     env_file:
-      - db.env
+      - nextcloud.env
 
   redis:
     image: arm64v8/redis:alpine
@@ -26,8 +24,9 @@ services:
     environment:
       - MYSQL_HOST=db
       - REDIS_HOST=redis
+      - REDIS_HOST_PORT=6379
     env_file:
-      - db.env
+      - nextcloud.env
     depends_on:
       - db
       - redis
@@ -48,7 +47,7 @@ services:
       - ./nginx/fastcgi.conf:/etc/nginx/fastcgi.conf
       - ./nginx/ssl/:/etc/nginx/ssl/
 
-      - ./https.conf:/etc/nginx/conf.d/https.conf
+      - ./nextcloud.conf:/etc/nginx/conf.d/https.conf
     depends_on:
       - cloud
 

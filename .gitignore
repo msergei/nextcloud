@@ -1,0 +1,4 @@
+.idea
+.git
+nginx/ssl/localhost.*
+nextcloud.env

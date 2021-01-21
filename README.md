@@ -23,7 +23,7 @@ bash make-sert.sh localhost
 ```
 Or put your own certificate to ssl folder and rename it to localhost.
 
-- If you want you can change mariadb user credential in file 'db.env'
+- Copy nextcloud.env.example to nextcloud.env and change credentials there.
 
 - Start services in project root folder:
 ```
