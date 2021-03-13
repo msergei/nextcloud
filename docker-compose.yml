@@ -21,6 +21,7 @@ services:
     restart: always
     volumes:
       - nextcloud:/var/www/html
+      - ./nextcloud.ini:/usr/local/etc/php/conf.d/nextcloud.ini:ro
     environment:
       - MYSQL_HOST=db
       - REDIS_HOST=redis
@@ -39,7 +40,7 @@ services:
     volumes:
       - nextcloud:/var/www/html:ro
       - logs:/var/log/nginx
-           
+
       - ./nginx/proxy.conf:/etc/nginx/proxy.conf
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
       - ./nginx/ssl.conf:/etc/nginx/ssl.conf
@@ -56,6 +57,7 @@ services:
     restart: always
     volumes:
       - nextcloud:/var/www/html
+      - ./nextcloud.ini:/usr/local/etc/php/conf.d/nextcloud.ini:ro
     entrypoint: /cron.sh
     depends_on:
       - db
