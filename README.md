@@ -3,7 +3,7 @@
 Nextcloud Server uses official Nextclod docker images, but additional it uses nginx for ssl.
 
 ### Arch
-- arm64v8 (or arm64 or aarch64)
+- arm64 (arm64v8 or aarch64)
 
 ## How to install?
 
