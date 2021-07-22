@@ -2,8 +2,10 @@
 
 Nextcloud Server uses official Nextclod docker images, but additional it uses nginx for ssl.
 
-### Arch
+### Support archs:
 - amd64
+- arm64 (aarch64)
+- arm32 (armhf)
 
 ## How to install?
 
@@ -25,15 +27,19 @@ Or put your own certificate to ssl folder and rename it to localhost.
 
 - Copy nextcloud.env.example to nextcloud.env and change credentials there.
 
+- Choose the arch environment file and copy it to ".env" file, for example:
+```
+cp arch64.env .env
+```
+
 - Start services in project root folder:
 ```
-cd ../../
 docker-compose up -d
 ```
 
 ## How to use?
 
-- Nextcloud Server web page:
+- Nextcloud Server web page (the first start is about 3 minutes):
 ```
 https://MACHINE_IP/
 ```

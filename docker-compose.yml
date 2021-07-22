@@ -1,8 +1,8 @@
-version: '3'
+version: '3.6'
 
 services:
   db:
-    image: mariadb
+    image: "${arch}mariadb:10.5"
     command: --transaction-isolation=READ-COMMITTED --binlog-format=ROW
     restart: always
     volumes:
@@ -11,13 +11,13 @@ services:
       - nextcloud.env
 
   redis:
-    image: redis:alpine
+    image: "${arch}redis:alpine"
     volumes:
       - redis:/data
     restart: always
 
   cloud:
-    image: nextcloud:fpm-alpine
+    image: "${arch}nextcloud:fpm-alpine"
     restart: always
     volumes:
       - nextcloud:/var/www/html
@@ -33,7 +33,7 @@ services:
       - redis
 
   nginx:
-    image: nginx:alpine
+    image: "${arch}nginx:alpine"
     restart: always
     ports:
       - 443:443/tcp
@@ -53,7 +53,7 @@ services:
       - cloud
 
   cron:
-    image: nextcloud:fpm-alpine
+    image: "${arch}nextcloud:fpm-alpine"
     restart: always
     volumes:
       - nextcloud:/var/www/html
