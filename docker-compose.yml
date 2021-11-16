@@ -2,8 +2,8 @@ version: '3.6'
 
 services:
   db:
-    image: "${arch}mariadb:10.5"
-    command: --transaction-isolation=READ-COMMITTED --binlog-format=ROW
+    image: "${arch}mariadb:10.7"
+    command: --transaction-isolation=READ-COMMITTED --binlog-format=ROW --innodb-file-per-table=1 --skip-innodb-read-only-compressed
     restart: always
     volumes:
       - db:/var/lib/mysql
@@ -22,6 +22,7 @@ services:
     volumes:
       - nextcloud:/var/www/html
       - ./nextcloud.ini:/usr/local/etc/php/conf.d/nextcloud.ini:ro
+      - ./php.ini:/usr/local/etc/php-fpm.d/www.conf:ro
     environment:
       - MYSQL_HOST=db
       - REDIS_HOST=redis
