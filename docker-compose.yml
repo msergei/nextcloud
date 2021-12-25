@@ -2,11 +2,10 @@ version: '3.6'
 
 services:
   db:
-    image: "${arch}mariadb:10.7"
-    command: --transaction-isolation=READ-COMMITTED --binlog-format=ROW --innodb-file-per-table=1 --skip-innodb-read-only-compressed
+    image: "${arch}postgres:13-alpine"
     restart: always
     volumes:
-      - db:/var/lib/mysql
+      - db:/var/lib/postgresql/data
     env_file:
       - nextcloud.env
 
@@ -24,7 +23,7 @@ services:
       - ./nextcloud.ini:/usr/local/etc/php/conf.d/nextcloud.ini:ro
       - ./php.ini:/usr/local/etc/php-fpm.d/www.conf:ro
     environment:
-      - MYSQL_HOST=db
+      - POSTGRES_HOST=db
       - REDIS_HOST=redis
       - REDIS_HOST_PORT=6379
     env_file:
@@ -63,6 +62,7 @@ services:
     depends_on:
       - db
       - redis
+      - cloud
 
 volumes:
   db:
