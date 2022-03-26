@@ -3,6 +3,8 @@ version: '3.6'
 services:
   db:
     image: "${arch}postgres:13-alpine"
+    security_opt:
+      - seccomp:unconfined
     restart: always
     volumes:
       - db:/var/lib/postgresql/data
@@ -10,7 +12,7 @@ services:
       - nextcloud.env
 
   redis:
-    image: "${arch}redis:alpine"
+    image: "${arch}redis:6.0-alpine"
     volumes:
       - redis:/data
     restart: always
