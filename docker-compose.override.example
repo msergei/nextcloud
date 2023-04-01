@@ -1,0 +1,5 @@
+version: '3.8'
+
+services:
+    labels:
+      - traefik.http.routers.nginx.rule=Host(`test.local`)

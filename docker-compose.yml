@@ -61,7 +61,6 @@ services:
       - cloud
     labels:
       - traefik.enable=true
-      - traefik.http.routers.nginx.rule=Host(`test.local`)
       - traefik.http.routers.nginx.entrypoints=websecure
       - traefik.http.routers.nginx.tls.certresolver=myresolver
       - traefik.http.services.nginx.loadbalancer.server.port=80

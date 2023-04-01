@@ -25,7 +25,7 @@ bash make-cert.sh localhost
 ```
 Or put your own certificate to ssl folder and rename it to localhost.
 
-- Copy nextcloud.env.example to nextcloud.env and change credentials there.
+- Copy nextcloud.env.example to nextcloud.env and change credentials there:
 ```
 cp nextcloud.env.example nextcloud.env
 ```
@@ -33,6 +33,11 @@ cp nextcloud.env.example nextcloud.env
 - Choose the arch environment file and copy it to ".env" file, for example:
 ```
 cp arm64.env .env
+```
+
+- Copy docker-compose.override.example to docker-compose.override.yml and change DOMAIN name:
+```
+cp docker-compose.override.example docker-compose.override.yml
 ```
 
 - Start services in project root folder:
