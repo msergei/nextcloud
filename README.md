@@ -20,16 +20,19 @@ cd nextcloud
 - Make certificates for https. You can use your own certificate or create it:
 ```
 cd nginx/ssl
-chmod +x make-sert.sh
-bash make-sert.sh localhost
+chmod +x make-cert.sh
+bash make-cert.sh localhost
 ```
 Or put your own certificate to ssl folder and rename it to localhost.
 
 - Copy nextcloud.env.example to nextcloud.env and change credentials there.
+```
+cp nextcloud.env.example nextcloud.env
+```
 
 - Choose the arch environment file and copy it to ".env" file, for example:
 ```
-cp arch64.env .env
+cp arm64.env .env
 ```
 
 - Start services in project root folder:
