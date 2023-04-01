@@ -1,4 +1,11 @@
-version: '3.6'
+version: '3.8'
+
+networks:
+  web:
+    external:
+      name: traefik-net
+  nextcloud:
+    external: false
 
 services:
   db:
@@ -10,12 +17,16 @@ services:
       - db:/var/lib/postgresql/data
     env_file:
       - nextcloud.env
+    networks:
+      - nextcloud
 
   redis:
     image: "${arch}redis:6.0-alpine"
     volumes:
       - redis:/data
     restart: always
+    networks:
+      - nextcloud
 
   cloud:
     image: "${arch}nextcloud:fpm-alpine"
@@ -33,26 +44,31 @@ services:
     depends_on:
       - db
       - redis
+    networks:
+      - nextcloud
 
   nginx:
     image: "${arch}nginx:alpine"
     restart: always
     ports:
-      - 443:443/tcp
+      - 80:80
     volumes:
       - nextcloud:/var/www/html:ro
       - logs:/var/log/nginx
-
-      - ./nginx/proxy.conf:/etc/nginx/proxy.conf
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
-      - ./nginx/ssl.conf:/etc/nginx/ssl.conf
-      - ./nginx/headers.conf:/etc/nginx/headers.conf
-      - ./nginx/fastcgi.conf:/etc/nginx/fastcgi.conf
-      - ./nginx/ssl/:/etc/nginx/ssl/
-
-      - ./nextcloud.conf:/etc/nginx/conf.d/https.conf
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./nextcloud.conf:/etc/nginx/conf.d/default.conf
     depends_on:
       - cloud
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.nginx.rule=Host(`test.local`)
+      - traefik.http.routers.nginx.entrypoints=websecure
+      - traefik.http.routers.nginx.tls.certresolver=myresolver
+      - traefik.http.services.nginx.loadbalancer.server.port=80
+      - traefik.docker.network=traefik-net
+    networks:
+      - nextcloud
+      - web
 
   cron:
     image: "${arch}nextcloud:fpm-alpine"
@@ -65,6 +81,8 @@ services:
       - db
       - redis
       - cloud
+    networks:
+      - nextcloud
 
 volumes:
   db:
