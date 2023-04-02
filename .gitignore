@@ -3,3 +3,4 @@
 nginx/ssl/localhost.*
 nextcloud.env
 .env
+docker-compose.override.yml

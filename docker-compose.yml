@@ -9,7 +9,7 @@ networks:
 
 services:
   db:
-    image: "${arch}postgres:13-alpine"
+    image: "${arch}postgres:14-alpine"
     security_opt:
       - seccomp:unconfined
     restart: always
@@ -19,14 +19,25 @@ services:
       - nextcloud.env
     networks:
       - nextcloud
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready", "-U", "nextcloud", "-d", "nextcloud" ]
+      interval: 30s
+      timeout: 60s
+      retries: 10
+      start_period: 60s
 
   redis:
-    image: "${arch}redis:6.0-alpine"
+    image: "${arch}redis:7-alpine"
     volumes:
       - redis:/data
     restart: always
     networks:
       - nextcloud
+    healthcheck:
+      test: [ "CMD-SHELL", "redis-cli ping | grep PONG" ]
+      interval: 3s
+      timeout: 5s
+      retries: 10
 
   cloud:
     image: "${arch}nextcloud:fpm-alpine"
