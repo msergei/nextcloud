@@ -9,7 +9,8 @@ networks:
 
 services:
   db:
-    image: "${arch}postgres:14-alpine"
+    image: postgres:14-alpine
+    platform: "${arch}"
     security_opt:
       - seccomp:unconfined
     restart: always
@@ -27,7 +28,8 @@ services:
       start_period: 60s
 
   redis:
-    image: "${arch}redis:7-alpine"
+    image: redis:7-alpine
+    platform: "${arch}"
     volumes:
       - redis:/data
     restart: always
@@ -40,7 +42,8 @@ services:
       retries: 10
 
   cloud:
-    image: "${arch}nextcloud:fpm-alpine"
+    image: nextcloud:fpm-alpine
+    platform: "${arch}"
     restart: always
     volumes:
       - nextcloud:/var/www/html
@@ -59,7 +62,8 @@ services:
       - nextcloud
 
   nginx:
-    image: "${arch}nginx:alpine"
+    image: nginx:alpine
+    platform: "${arch}"
     restart: always
     ports:
       - 80:80
@@ -81,7 +85,8 @@ services:
       - web
 
   cron:
-    image: "${arch}nextcloud:fpm-alpine"
+    image: nextcloud:fpm-alpine
+    platform: "${arch}"
     restart: always
     volumes:
       - nextcloud:/var/www/html
