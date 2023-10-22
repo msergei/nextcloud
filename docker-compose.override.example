@@ -1,6 +1,17 @@
-version: '3.8'
+version: '3.9'
 
 services:
+  db:
+    platform: linux/arm64/v8
+
+  redis:
+    platform: linux/arm64/v8
+
+  cloud:
+    platform: linux/arm64/v8
+
   nginx:
-    labels:
-      - traefik.http.routers.nginx.rule=Host(`test.local`)
+    platform: linux/arm64/v8
+
+  cron:
+    platform: linux/arm64/v8

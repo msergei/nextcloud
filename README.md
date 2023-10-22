@@ -30,9 +30,26 @@ Or put your own certificate to ssl folder and rename it to localhost.
 cp nextcloud.env.example nextcloud.env
 ```
 
-- Choose the arch environment file and copy it to ".env" file, for example:
+- You can add platform directive to docker-compose.override.yml:
 ```
-cp arm64.env .env
+version: '3.9'
+
+services:
+  db:
+    platform: linux/arm64/v8
+
+  redis:
+    platform: linux/arm64/v8
+
+  cloud:
+    platform: linux/arm64/v8
+
+  nginx:
+    platform: linux/arm64/v8
+
+  cron:
+    platform: linux/arm64/v8
+
 ```
 
 - Copy docker-compose.override.example to docker-compose.override.yml and change DOMAIN name:

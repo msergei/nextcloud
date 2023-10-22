@@ -1,25 +1,19 @@
-version: '3.8'
+version: '3.9'
 
 networks:
-  web:
-    external:
-      name: traefik-net
-  nextcloud:
-    external: false
+  proxy:
+    external: true
 
 services:
   db:
-    image: postgres:14-alpine
-    platform: "${arch}"
-    security_opt:
-      - seccomp:unconfined
+    image: postgres:16-alpine
     restart: always
     volumes:
       - db:/var/lib/postgresql/data
     env_file:
       - nextcloud.env
     networks:
-      - nextcloud
+      - proxy
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready", "-d", "nextcloud" ]
       interval: 30s
@@ -29,12 +23,11 @@ services:
 
   redis:
     image: redis:7-alpine
-    platform: "${arch}"
     volumes:
       - redis:/data
     restart: always
     networks:
-      - nextcloud
+      - proxy
     healthcheck:
       test: [ "CMD-SHELL", "redis-cli ping | grep PONG" ]
       interval: 3s
@@ -43,7 +36,6 @@ services:
 
   cloud:
     image: nextcloud:fpm-alpine
-    platform: "${arch}"
     restart: always
     volumes:
       - nextcloud:/var/www/html
@@ -59,14 +51,11 @@ services:
       - db
       - redis
     networks:
-      - nextcloud
+      - proxy
 
   nginx:
     image: nginx:alpine
-    platform: "${arch}"
     restart: always
-    ports:
-      - 80:80
     volumes:
       - nextcloud:/var/www/html:ro
       - logs:/var/log/nginx
@@ -76,17 +65,28 @@ services:
       - cloud
     labels:
       - traefik.enable=true
-      - traefik.http.routers.nginx.entrypoints=websecure
-      - traefik.http.routers.nginx.tls.certresolver=myresolver
-      - traefik.http.services.nginx.loadbalancer.server.port=80
-      - traefik.docker.network=traefik-net
+      - traefik.http.routers.nextcloud.rule=Host(`nextcloud.localhost`)
+      - traefik.http.services.nextcloud.loadbalancer.server.port=80
+
+      - traefik.http.middlewares.nextredirect.redirectregex.regex=^https://www\.(.*)
+      - traefik.http.middlewares.nextredirect.redirectregex.replacement=https://$${1}
+      - traefik.http.routers.nextcloud.middlewares=nextredirect
+      - traefik.http.middlewares.nc-header.headers.frameDeny=true
+      - traefik.http.middlewares.nc-header.headers.contentTypeNosniff=true
+      - traefik.http.middlewares.nc-header.headers.stsIncludeSubdomains=true
+      - traefik.http.middlewares.nc-header.headers.stsPreload=true
+      - traefik.http.middlewares.nc-header.headers.stsSeconds=31536000
+      - traefik.http.middlewares.nc-header.headers.referrerPolicy=same-origin
+      - traefik.http.middlewares.nc-header.headers.browserXssFilter=true
+      - traefik.http.middlewares.nc-header.headers.customRequestHeaders.X-Forwarded-Proto=https
+      - traefik.http.middlewares.nc-header.headers.customResponseHeaders.X-Robots-Tag=none
+      - traefik.http.middlewares.nc-header.headers.customFrameOptionsValue=SAMEORIGIN
+
     networks:
-      - nextcloud
-      - web
+      - proxy
 
   cron:
     image: nextcloud:fpm-alpine
-    platform: "${arch}"
     restart: always
     volumes:
       - nextcloud:/var/www/html
@@ -96,8 +96,6 @@ services:
       - db
       - redis
       - cloud
-    networks:
-      - nextcloud
 
 volumes:
   db:
