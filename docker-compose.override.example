@@ -12,6 +12,8 @@ services:
 
   nginx:
     platform: linux/arm64/v8
+    labels:
+      - traefik.http.routers.nextcloud.rule=Host(`nextcloud.localhost`)
 
   cron:
     platform: linux/arm64/v8
