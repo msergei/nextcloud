@@ -73,3 +73,8 @@ https://MACHINE_IP/
 ```
 https://MACHINE_IP/remote.php/webdav/
 ```
+
+- How to fix encoding file names problems?
+```
+convmv -f utf-8 -t utf-8 -r --notest --nfc ./
+```
