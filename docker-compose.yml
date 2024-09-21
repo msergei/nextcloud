@@ -42,7 +42,6 @@ services:
       - ./nextcloud.ini:/usr/local/etc/php/conf.d/nextcloud.ini:ro
       - ./php.ini:/usr/local/etc/php-fpm.d/www.conf:ro
     environment:
-      - POSTGRES_HOST=db
       - REDIS_HOST=redis
       - REDIS_HOST_PORT=6379
     env_file:
@@ -92,6 +91,8 @@ services:
       - nextcloud:/var/www/html
       - ./nextcloud.ini:/usr/local/etc/php/conf.d/nextcloud.ini:ro
     entrypoint: /cron.sh
+    env_file:
+      - nextcloud.env
     depends_on:
       - db
       - redis
