@@ -1,11 +1,6 @@
 # Nextcloud Server
 
-Nextcloud Server uses official Nextclod docker images, but additional it uses nginx for ssl.
-
-### Support archs:
-- amd64
-- arm64 (aarch64)
-- arm32 (armhf)
+Nextcloud Server uses official Nextclod docker images
 
 ## How to install?
 
@@ -17,12 +12,6 @@ git clone https://github.com/msergei/nextcloud.git
 cd nextcloud
 ```
 
-- Make certificates for https. You can use your own certificate or create it:
-```
-cd nginx/ssl
-chmod +x make-cert.sh
-bash make-cert.sh localhost
-```
 Or put your own certificate to ssl folder and rename it to localhost.
 
 
