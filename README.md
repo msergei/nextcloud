@@ -9,7 +9,7 @@ Nextcloud Server uses official Nextclod docker images, but additional it uses ng
 
 ## How to install?
 
-- You need to install docker and docker-compose. Please use official manuals.
+- You need to install docker and docker compose. Please use official manuals.
 
 - Download or clone repo:
 ```
@@ -25,37 +25,8 @@ bash make-cert.sh localhost
 ```
 Or put your own certificate to ssl folder and rename it to localhost.
 
-- Copy nextcloud.env.example to nextcloud.env and change credentials there:
-```
-cp nextcloud.env.example nextcloud.env
-```
 
-- You can add platform directive to docker-compose.override.yml:
-```
-version: '3.9'
-
-services:
-  db:
-    platform: linux/arm64/v8
-
-  redis:
-    platform: linux/arm64/v8
-
-  cloud:
-    platform: linux/arm64/v8
-
-  nginx:
-    platform: linux/arm64/v8
-
-  cron:
-    platform: linux/arm64/v8
-
-```
-
-- Copy docker-compose.override.example to docker-compose.override.yml and change DOMAIN name:
-```
-cp docker-compose.override.example docker-compose.override.yml
-```
+- Copy example.env to .env and fill all variables
 
 - Start services in project root folder:
 ```
