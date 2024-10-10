@@ -1,5 +1,5 @@
 networks:
-  ${NAME}_internal:
+  nextcloud_internal:
     driver: bridge
   proxy:
     external: true
@@ -15,7 +15,7 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_DB=${POSTGRES_DB}
     networks:
-      - ${NAME}_internal
+      - nextcloud_internal
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready", "-d", "nextcloud" ]
       interval: 30s
@@ -29,7 +29,7 @@ services:
       - redis:/data
     restart: always
     networks:
-      - ${NAME}_internal
+      - nextcloud_internal
     healthcheck:
       test: [ "CMD-SHELL", "redis-cli ping | grep PONG" ]
       interval: 3s
@@ -54,9 +54,9 @@ services:
       - db
       - redis
     networks:
-      - ${NAME}_internal
+      - nextcloud_internal
 
-  nginx_${NAME}:
+  nginx:
     image: nginx:alpine
     restart: always
     volumes:
@@ -85,7 +85,7 @@ services:
       - traefik.http.middlewares.nc-header.headers.customResponseHeaders.X-Robots-Tag=none
       - traefik.http.middlewares.nc-header.headers.customFrameOptionsValue=SAMEORIGIN
     networks:
-      - ${NAME}_internal
+      - nextcloud_internal
       - proxy
 
   cron:
@@ -107,7 +107,7 @@ services:
       - redis
       - cloud
     networks:
-      - ${NAME}_internal
+      - nextcloud_internal
 
 volumes:
   db:
