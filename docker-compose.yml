@@ -83,9 +83,13 @@ services:
       - traefik.enable=true
       - traefik.http.routers.${PROJECT_NAME}.rule=Host(`${NEXTCLOUD_DOMAIN}`)
       - traefik.http.services.${PROJECT_NAME}.loadbalancer.server.port=80
+
+      # Redirection from www to without www
       - traefik.http.middlewares.${PROJECT_NAME}_redirect.redirectregex.regex=^https://www\.(.*)
       - traefik.http.middlewares.${PROJECT_NAME}_redirect.redirectregex.replacement=https://$${1}
-      - traefik.http.routers.${PROJECT_NAME}.middlewares=${PROJECT_NAME}_redirect
+      - traefik.http.middlewares.${PROJECT_NAME}_redirect.redirectregex.permanent=true
+
+      # Middleware security headers
       - traefik.http.middlewares.${PROJECT_NAME}-header.headers.frameDeny=true
       - traefik.http.middlewares.${PROJECT_NAME}-header.headers.contentTypeNosniff=true
       - traefik.http.middlewares.${PROJECT_NAME}-header.headers.stsIncludeSubdomains=true
@@ -94,8 +98,17 @@ services:
       - traefik.http.middlewares.${PROJECT_NAME}-header.headers.referrerPolicy=same-origin
       - traefik.http.middlewares.${PROJECT_NAME}-header.headers.browserXssFilter=true
       - traefik.http.middlewares.${PROJECT_NAME}-header.headers.customRequestHeaders.X-Forwarded-Proto=https
+      - traefik.http.middlewares.${PROJECT_NAME}-header.headers.customRequestHeaders.X-Forwarded-For=$${remoteip}
       - traefik.http.middlewares.${PROJECT_NAME}-header.headers.customResponseHeaders.X-Robots-Tag=none
       - traefik.http.middlewares.${PROJECT_NAME}-header.headers.customFrameOptionsValue=SAMEORIGIN
+
+      # Redirection .well-known for CardDAV and CalDAV
+      - traefik.http.middlewares.${PROJECT_NAME}-well-known.redirectregex.regex=^https://(.*)/.well-known/(card|cal)dav
+      - traefik.http.middlewares.${PROJECT_NAME}-well-known.redirectregex.replacement=https://$${1}/remote.php/dav
+      - traefik.http.middlewares.${PROJECT_NAME}-well-known.redirectregex.permanent=true
+
+      # Routing apply
+      - traefik.http.routers.${PROJECT_NAME}.middlewares=${PROJECT_NAME}_redirect,${PROJECT_NAME}-header,${PROJECT_NAME}-well-known
     networks:
       - internal
       - proxy
