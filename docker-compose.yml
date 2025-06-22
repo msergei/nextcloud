@@ -119,6 +119,54 @@ services:
       - internal
       - proxy
 
+  onlyoffice:
+    image: onlyoffice/documentserver:latest
+    restart: always
+    environment:
+      - JWT_ENABLED=true
+      - JWT_SECRET=${ONLYOFFICE_JWT_SECRET}
+      - JWT_HEADER=Authorization
+      - JWT_IN_BODY=true
+      - ONLYOFFICE_HTTPS_HSTS_ENABLED=false
+      - USE_UNAUTHORIZED_STORAGE=false
+      - WOPI_ENABLED=true
+      - REJECT_UNAUTHORIZED=false
+    volumes:
+      - onlyoffice_data:/var/www/onlyoffice/Data
+      - onlyoffice_log:/var/log/onlyoffice
+      - onlyoffice_lib:/var/lib/onlyoffice
+      - onlyoffice_db:/var/lib/postgresql
+    networks:
+      - internal
+      - proxy
+    labels:
+      - traefik.enable=true
+      
+      # HTTPS router with Let's Encrypt
+      - traefik.http.routers.${PROJECT_NAME}-office.rule=Host(`${OFFICE_DOMAIN}`)
+      - traefik.http.routers.${PROJECT_NAME}-office.entrypoints=websecure
+      - traefik.http.routers.${PROJECT_NAME}-office.tls=true
+      - traefik.http.routers.${PROJECT_NAME}-office.tls.certresolver=letsencrypt
+      - traefik.http.services.${PROJECT_NAME}-office.loadbalancer.server.port=80
+
+      # HTTP to HTTPS redirect
+      - traefik.http.routers.${PROJECT_NAME}-office-http.rule=Host(`${OFFICE_DOMAIN}`)
+      - traefik.http.routers.${PROJECT_NAME}-office-http.entrypoints=web
+      - traefik.http.routers.${PROJECT_NAME}-office-http.middlewares=${PROJECT_NAME}-office-redirect
+
+      # Security headers for OnlyOffice
+      - traefik.http.middlewares.${PROJECT_NAME}-office-headers.headers.customRequestHeaders.X-Forwarded-Proto=https
+      - traefik.http.middlewares.${PROJECT_NAME}-office-headers.headers.customRequestHeaders.X-Forwarded-For=$${remoteip}
+      - traefik.http.middlewares.${PROJECT_NAME}-office-headers.headers.customResponseHeaders.X-Frame-Options=SAMEORIGIN
+      - traefik.http.middlewares.${PROJECT_NAME}-office-headers.headers.customResponseHeaders.Content-Security-Policy=frame-ancestors 'self' https://${NEXTCLOUD_DOMAIN}
+
+      # HTTPS redirect middleware
+      - traefik.http.middlewares.${PROJECT_NAME}-office-redirect.redirectscheme.scheme=https
+      - traefik.http.middlewares.${PROJECT_NAME}-office-redirect.redirectscheme.permanent=true
+
+      # Apply middleware to HTTPS router
+      - traefik.http.routers.${PROJECT_NAME}-office.middlewares=${PROJECT_NAME}-office-headers
+
   cron:
     image: nextcloud:fpm-alpine
     restart: always
@@ -146,3 +194,7 @@ volumes:
   nextcloud:
   logs:
   redis:
+  onlyoffice_data:
+  onlyoffice_log:
+  onlyoffice_lib:
+  onlyoffice_db:
