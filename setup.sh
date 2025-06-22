@@ -65,7 +65,7 @@ docker compose run --rm -u 82 cloud sh -c "php /var/www/html/occ config:system:s
 
 # Trusted proxies configuration (as JSON array)
 log_info "Configuring trusted proxies..."
-docker compose run --rm -u 82 cloud sh -c "php /var/www/html/occ config:system:set trusted_proxies --type json --value='[\"10.20.0.0/16\", \"nginx\"]'"
+docker compose run --rm -u 82 cloud sh -c "php /var/www/html/occ config:system:set trusted_proxies --type json --value='[\"10.20.0.0/16\"]'"
 
 # Forwarded headers configuration (as JSON array)
 log_info "Configuring forwarded headers..."
