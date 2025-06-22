@@ -39,7 +39,7 @@ if [ -n "$BOOKS_ID" ]; then
     
     # Make it available to admin user
     log_info "Making Books available to admin user..."
-    docker compose run --rm -u 82 cloud sh -c "php /var/www/html/occ files_external:applicable $BOOKS_ID --add-user=${NEXTCLOUD_ADMIN_USER:-admin}"
+    docker compose run --rm -u 82 cloud sh -c "php /var/www/html/occ files_external:applicable $BOOKS_ID --add-user=${NEXTCLOUD_ADMIN_USER}"
     
     # Set as read-only (optional, remove this line if you want write access)
     log_warn "Setting Books storage as read-only..."
