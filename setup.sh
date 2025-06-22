@@ -96,5 +96,5 @@ echo "Current forwarded headers:"
 docker compose run --rm -u 82 cloud sh -c "php /var/www/html/occ config:system:get forwarded_for_headers"
 
 log_info "Nextcloud configuration completed successfully!"
-log_warn "Please restart your containers: docker compose restart"
+docker compose restart
 log_warn "Don't forget to configure email settings in Admin panel -> Basic settings"
