@@ -29,92 +29,63 @@ else
     exit 1
 fi
 
-# Check if NEXTCLOUD_ADMIN_USER is set
-if [ -z "$NEXTCLOUD_ADMIN_USER" ]; then
-    log_error "NEXTCLOUD_ADMIN_USER not set in .env file!"
-    exit 1
-fi
-
-log_info "Target admin user: $NEXTCLOUD_ADMIN_USER"
-
 # Check if Nextcloud container is running
 if ! docker compose ps | grep -q "cloud.*Up"; then
     log_error "Nextcloud container is not running! Please start with: docker compose up -d"
     exit 1
 fi
 
-log_info "Setting up Books external storage..."
+log_info "Cleaning up existing Books external storages..."
 
-# Enable External Storage app
-log_info "Enabling External Storage app..."
-docker compose run --rm -u 82 cloud sh -c "php /var/www/html/occ app:enable files_external"
+# Get list of existing external storages
+EXISTING_STORAGES=$(docker compose run --rm -u 82 cloud sh -c "php /var/www/html/occ files_external:list --output=json" 2>/dev/null)
 
-# Wait a moment for app to be fully enabled
-sleep 2
-
-# Get list of existing users
-log_info "Getting list of Nextcloud users..."
-USERS_OUTPUT=$(docker compose run --rm -u 82 cloud sh -c "php /var/www/html/occ user:list --output=json" 2>/dev/null)
-
-if [ $? -ne 0 ] || [ -z "$USERS_OUTPUT" ]; then
-    log_error "Failed to get user list. Trying alternative method..."
-    USERS_LIST=$(docker compose run --rm -u 82 cloud sh -c "php /var/www/html/occ user:list" 2>/dev/null | grep -o '^[^:]*')
-    log_info "Available users: $USERS_LIST"
+if [ $? -eq 0 ] && [ -n "$EXISTING_STORAGES" ]; then
+    # Extract IDs of Books storages
+    BOOKS_IDS=$(echo "$EXISTING_STORAGES" | grep -B5 -A5 "Books" | grep -o '"[0-9]*"' | tr -d '"' | sort -u)
     
-    # Use first available user if NEXTCLOUD_ADMIN_USER not found
-    FIRST_USER=$(echo "$USERS_LIST" | head -n1 | tr -d ' ')
-    if [ -n "$FIRST_USER" ]; then
-        TARGET_USER="$FIRST_USER"
-        log_warn "Using first available user: $TARGET_USER"
-    else
-        log_error "No users found in Nextcloud!"
-        exit 1
+    if [ -n "$BOOKS_IDS" ]; then
+        log_warn "Found existing Books storages with IDs: $BOOKS_IDS"
+        for ID in $BOOKS_IDS; do
+            log_info "Removing Books storage with ID: $ID"
+            docker compose run --rm -u 82 cloud sh -c "php /var/www/html/occ files_external:delete $ID" 2>/dev/null
+        done
     fi
 else
-    # Check if target user exists in JSON output
-    if echo "$USERS_OUTPUT" | grep -q "\"$NEXTCLOUD_ADMIN_USER\""; then
-        TARGET_USER="$NEXTCLOUD_ADMIN_USER"
-        log_info "Found target user: $TARGET_USER"
-    else
-        # Get first user from JSON
-        TARGET_USER=$(echo "$USERS_OUTPUT" | grep -o '"[^"]*"' | head -n1 | tr -d '"')
-        log_warn "User '$NEXTCLOUD_ADMIN_USER' not found. Using: $TARGET_USER"
-    fi
+    log_warn "Could not get existing storages list, proceeding anyway..."
 fi
 
-if [ -z "$TARGET_USER" ]; then
-    log_error "No valid user found!"
-    exit 1
-fi
+# Enable External Storage app
+log_info "Ensuring External Storage app is enabled..."
+docker compose run --rm -u 82 cloud sh -c "php /var/www/html/occ app:enable files_external"
 
-# Create Books external storage
-log_info "Creating Books external storage..."
+# Wait a moment
+sleep 2
+
+# Create new Books external storage for ALL users
+log_info "Creating Books external storage for ALL users..."
 CREATE_OUTPUT=$(docker compose run --rm -u 82 cloud sh -c "php /var/www/html/occ files_external:create 'Books' local null::null -c datadir=/mnt/shared_books/Books" 2>/dev/null)
 
-# Extract storage ID from output
+# Extract storage ID
 BOOKS_ID=$(echo "$CREATE_OUTPUT" | grep -o 'Storage created with id [0-9]*' | grep -o '[0-9]*')
 
 if [ -z "$BOOKS_ID" ]; then
-    # Try alternative extraction method
     BOOKS_ID=$(echo "$CREATE_OUTPUT" | tail -n1 | grep -o '[0-9]*' | head -n1)
 fi
 
 if [ -n "$BOOKS_ID" ]; then
     log_info "Books storage created with ID: $BOOKS_ID"
     
-    # Make it available to target user
-    log_info "Making Books available to user: $TARGET_USER"
-    docker compose run --rm -u 82 cloud sh -c "php /var/www/html/occ files_external:applicable $BOOKS_ID --add-user=$TARGET_USER"
+    # Make it available to ALL users (don't specify any user)
+    log_info "Making Books available to ALL users..."
+    # По умолчанию external storage доступен всем, если не указать конкретных пользователей
     
-    if [ $? -eq 0 ]; then
-        log_info "Successfully assigned Books storage to user: $TARGET_USER"
-    else
-        log_error "Failed to assign storage to user"
-    fi
-    
-    # Set as read-only (remove this section if you want write access)
+    # Set permissions - remove read-only if you want write access
     log_warn "Setting Books storage as read-only..."
     docker compose run --rm -u 82 cloud sh -c "php /var/www/html/occ files_external:option $BOOKS_ID readonly true"
+    
+    # Optional: Set priority (higher number = higher priority)
+    docker compose run --rm -u 82 cloud sh -c "php /var/www/html/occ files_external:option $BOOKS_ID priority 100"
     
 else
     log_error "Failed to create Books storage"
@@ -127,5 +98,11 @@ log_info "Current external storages:"
 docker compose run --rm -u 82 cloud sh -c "php /var/www/html/occ files_external:list"
 
 log_info "Books storage setup completed!"
-log_info "Books folder will appear in Nextcloud as 'Books' external storage for user: $TARGET_USER"
+log_info "Books folder will appear in Nextcloud as 'Books' external storage for ALL users"
 log_warn "Files remain owned by your original user, so other containers keep access"
+
+# Optional: Trigger files scan for all users
+log_info "Triggering files scan for all users..."
+docker compose run --rm -u 82 cloud sh -c "php /var/www/html/occ files:scan --all"
+
+log_info "Setup complete! All users should now see Books in their file manager."
