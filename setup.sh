@@ -63,16 +63,20 @@ docker compose run --rm -u 82 cloud sh -c "php /var/www/html/occ config:system:s
 log_info "Setting up overwrite host..."
 docker compose run --rm -u 82 cloud sh -c "php /var/www/html/occ config:system:set overwritehost --value='$NEXTCLOUD_DOMAIN'"
 
-# Trusted proxies configuration
+# Trusted proxies configuration (as JSON array)
 log_info "Configuring trusted proxies..."
-docker compose run --rm -u 82 cloud sh -c "php /var/www/html/occ config:system:set trusted_proxies 0 --value='10.20.0.0/16'"
-docker compose run --rm -u 82 cloud sh -c "php /var/www/html/occ config:system:set trusted_proxies 1 --value='nginx'"
+docker compose run --rm -u 82 cloud sh -c "php /var/www/html/occ config:system:set trusted_proxies --type json --value='[\"10.20.0.0/16\", \"nginx\"]'"
 
-# Forwarded headers configuration
+# Forwarded headers configuration (as JSON array)
 log_info "Configuring forwarded headers..."
-docker compose run --rm -u 82 cloud sh -c "php /var/www/html/occ config:system:set forwarded_for_headers 0 --value='HTTP_X_FORWARDED_FOR'"
-docker compose run --rm -u 82 cloud sh -c "php /var/www/html/occ config:system:set forwarded_for_headers 1 --value='HTTP_X_FORWARDED_PROTO'"
-docker compose run --rm -u 82 cloud sh -c "php /var/www/html/occ config:system:set forwarded_for_headers 2 --value='HTTP_X_REAL_IP'"
+docker compose run --rm -u 82 cloud sh -c "php /var/www/html/occ config:system:set forwarded_for_headers --type json --value='[\"HTTP_X_FORWARDED_FOR\", \"HTTP_X_FORWARDED_PROTO\", \"HTTP_X_REAL_IP\"]'"
+
+# Additional system settings
+log_info "Setting default phone region..."
+docker compose run --rm -u 82 cloud sh -c "php /var/www/html/occ config:system:set default_phone_region --value='US'"
+
+log_info "Setting maintenance window..."
+docker compose run --rm -u 82 cloud sh -c "php /var/www/html/occ config:system:set maintenance_window_start --type integer --value=1"
 
 # WOPI allowlist for Collabora
 log_info "Configuring WOPI allowlist for Collabora..."
@@ -93,3 +97,4 @@ docker compose run --rm -u 82 cloud sh -c "php /var/www/html/occ config:system:g
 
 log_info "Nextcloud configuration completed successfully!"
 log_warn "Please restart your containers: docker compose restart"
+log_warn "Don't forget to configure email settings in Admin panel -> Basic settings"
