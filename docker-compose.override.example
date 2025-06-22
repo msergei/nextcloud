@@ -1,0 +1,9 @@
+services:
+  cloud:
+    volumes:
+      - media-server_share:/mnt/shared_books:ro
+
+volumes:
+  media-server_share:
+    external: true
+    name: media-server_share
