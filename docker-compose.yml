@@ -106,7 +106,6 @@ services:
       - traefik.http.middlewares.${PROJECT_NAME}-header.headers.browserXssFilter=true
       - traefik.http.middlewares.${PROJECT_NAME}-header.headers.customRequestHeaders.X-Forwarded-Proto=https
       - traefik.http.middlewares.${PROJECT_NAME}-header.headers.customRequestHeaders.X-Forwarded-For=$${remoteip}
-      - traefik.http.middlewares.${PROJECT_NAME}-header.headers.customResponseHeaders.X-Robots-Tag=none
       - traefik.http.middlewares.${PROJECT_NAME}-header.headers.customFrameOptionsValue=SAMEORIGIN
 
       # Redirection .well-known for CardDAV and CalDAV
