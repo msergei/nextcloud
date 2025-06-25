@@ -105,7 +105,6 @@ services:
       - traefik.http.middlewares.${PROJECT_NAME}-header.headers.referrerPolicy=same-origin
       - traefik.http.middlewares.${PROJECT_NAME}-header.headers.browserXssFilter=true
       - traefik.http.middlewares.${PROJECT_NAME}-header.headers.customRequestHeaders.X-Forwarded-Proto=https
-      - traefik.http.middlewares.${PROJECT_NAME}-header.headers.customRequestHeaders.X-Forwarded-For=$${remoteip}
       - traefik.http.middlewares.${PROJECT_NAME}-header.headers.customFrameOptionsValue=SAMEORIGIN
 
       # Redirection .well-known for CardDAV and CalDAV
@@ -114,7 +113,7 @@ services:
       - traefik.http.middlewares.${PROJECT_NAME}-well-known.redirectregex.permanent=true
 
       # Routing apply
-      - traefik.http.routers.${PROJECT_NAME}.middlewares=${PROJECT_NAME}_redirect,${PROJECT_NAME}-header,${PROJECT_NAME}-well-known
+      - traefik.http.routers.${PROJECT_NAME}.middlewares=${PROJECT_NAME}_redirect,${PROJECT_NAME}-header,${PROJECT_NAME}-well-known,ratelimit,inflightreq,circuitbreaker,crowdsec-bouncer
     networks:
       - internal
       - proxy
