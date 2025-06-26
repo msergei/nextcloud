@@ -1,3 +1,5 @@
+version: "3.8"
+
 networks:
   internal:
     driver: bridge
@@ -41,83 +43,6 @@ services:
       retries: 5
       start_period: 10s
 
-  cloud:
-    image: nextcloud:fpm-alpine
-    restart: always
-    volumes:
-      - nextcloud:/var/www/html
-      - ./nextcloud.ini:/usr/local/etc/php/conf.d/nextcloud.ini:ro
-      - ./php.ini:/usr/local/etc/php-fpm.d/www.conf:ro
-    environment:
-      - REDIS_HOST=redis
-      - REDIS_HOST_PORT=6379
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=${POSTGRES_DB}
-      - POSTGRES_HOST=db
-
-      # Auto configuration server
-      - NEXTCLOUD_ADMIN_USER=${NEXTCLOUD_ADMIN_USER}
-      - NEXTCLOUD_ADMIN_PASSWORD=${NEXTCLOUD_ADMIN_PASSWORD}
-      - NEXTCLOUD_TRUSTED_DOMAINS=${NEXTCLOUD_DOMAIN}
-
-      - PHP_MEMORY_LIMIT=2048M
-      - PHP_OPCACHE_ENABLE=1
-      - PHP_OPCACHE_ENABLE_CLI=1
-    depends_on:
-      - db
-      - redis
-    networks:
-      - internal
-    healthcheck:
-      test: [ "CMD-SHELL", "su -s /bin/sh www-data -c 'php /var/www/html/occ status | grep -q true'" ]
-      interval: 30s
-      timeout: 10s
-      retries: 10
-      start_period: 15s
-
-  nginx:
-    image: nginx:alpine
-    restart: always
-    volumes:
-      - nextcloud:/var/www/html:ro
-      - logs:/var/log/nginx
-      - ./nginx.conf:/etc/nginx/nginx.conf
-      - ./nextcloud.conf:/etc/nginx/conf.d/default.conf
-    depends_on:
-      - cloud
-    labels:
-      - traefik.enable=true
-      - traefik.http.routers.${PROJECT_NAME}.rule=Host(`${NEXTCLOUD_DOMAIN}`)
-      - traefik.http.services.${PROJECT_NAME}.loadbalancer.server.port=80
-
-      # Redirection from www to without www
-      - traefik.http.middlewares.${PROJECT_NAME}_redirect.redirectregex.regex=^https://www\.(.*)
-      - traefik.http.middlewares.${PROJECT_NAME}_redirect.redirectregex.replacement=https://$${1}
-      - traefik.http.middlewares.${PROJECT_NAME}_redirect.redirectregex.permanent=true
-
-      # Middleware security headers
-      - traefik.http.middlewares.${PROJECT_NAME}-header.headers.frameDeny=true
-      - traefik.http.middlewares.${PROJECT_NAME}-header.headers.contentTypeNosniff=true
-      - traefik.http.middlewares.${PROJECT_NAME}-header.headers.stsIncludeSubdomains=true
-      - traefik.http.middlewares.${PROJECT_NAME}-header.headers.stsPreload=true
-      - traefik.http.middlewares.${PROJECT_NAME}-header.headers.stsSeconds=31536000
-      - traefik.http.middlewares.${PROJECT_NAME}-header.headers.referrerPolicy=same-origin
-      - traefik.http.middlewares.${PROJECT_NAME}-header.headers.browserXssFilter=true
-      - traefik.http.middlewares.${PROJECT_NAME}-header.headers.customRequestHeaders.X-Forwarded-Proto=https
-      - traefik.http.middlewares.${PROJECT_NAME}-header.headers.customFrameOptionsValue=SAMEORIGIN
-
-      # Redirection .well-known for CardDAV and CalDAV
-      - traefik.http.middlewares.${PROJECT_NAME}-well-known.redirectregex.regex=^https://(.*)/.well-known/(card|cal)dav
-      - traefik.http.middlewares.${PROJECT_NAME}-well-known.redirectregex.replacement=https://$${1}/remote.php/dav
-      - traefik.http.middlewares.${PROJECT_NAME}-well-known.redirectregex.permanent=true
-
-      # Routing apply
-      - traefik.http.routers.${PROJECT_NAME}.middlewares=${PROJECT_NAME}_redirect,${PROJECT_NAME}-header,${PROJECT_NAME}-well-known,ratelimit,inflightreq,circuitbreaker,crowdsec-bouncer
-    networks:
-      - internal
-      - proxy
-
   onlyoffice:
     image: onlyoffice/documentserver:latest
     restart: always
@@ -140,31 +65,104 @@ services:
       - proxy
     labels:
       - traefik.enable=true
-      
-      # HTTPS router with Let's Encrypt
       - traefik.http.routers.${PROJECT_NAME}-office.rule=Host(`${OFFICE_DOMAIN}`)
       - traefik.http.routers.${PROJECT_NAME}-office.entrypoints=websecure
       - traefik.http.routers.${PROJECT_NAME}-office.tls=true
       - traefik.http.routers.${PROJECT_NAME}-office.tls.certresolver=myresolver
       - traefik.http.services.${PROJECT_NAME}-office.loadbalancer.server.port=80
-
-      # HTTP to HTTPS redirect
       - traefik.http.routers.${PROJECT_NAME}-office-http.rule=Host(`${OFFICE_DOMAIN}`)
       - traefik.http.routers.${PROJECT_NAME}-office-http.entrypoints=web
       - traefik.http.routers.${PROJECT_NAME}-office-http.middlewares=${PROJECT_NAME}-office-redirect
-
-      # Security headers for OnlyOffice
       - traefik.http.middlewares.${PROJECT_NAME}-office-headers.headers.customRequestHeaders.X-Forwarded-Proto=https
       - traefik.http.middlewares.${PROJECT_NAME}-office-headers.headers.customRequestHeaders.X-Forwarded-For=$${remoteip}
       - traefik.http.middlewares.${PROJECT_NAME}-office-headers.headers.customResponseHeaders.X-Frame-Options=SAMEORIGIN
       - traefik.http.middlewares.${PROJECT_NAME}-office-headers.headers.customResponseHeaders.Content-Security-Policy=frame-ancestors 'self' https://${NEXTCLOUD_DOMAIN}
-
-      # HTTPS redirect middleware
       - traefik.http.middlewares.${PROJECT_NAME}-office-redirect.redirectscheme.scheme=https
       - traefik.http.middlewares.${PROJECT_NAME}-office-redirect.redirectscheme.permanent=true
-
-      # Apply middleware to HTTPS router
       - traefik.http.routers.${PROJECT_NAME}-office.middlewares=${PROJECT_NAME}-office-headers
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/healthcheck"] # OnlyOffice поддерживает healthcheck эндпоинт
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  cloud:
+    image: nextcloud:fpm-alpine
+    restart: always
+    volumes:
+      - nextcloud:/var/www/html
+      - ./nextcloud.ini:/usr/local/etc/php/conf.d/nextcloud.ini:ro
+      - ./php.ini:/usr/local/etc/php-fpm.d/www.conf:ro
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_HOST_PORT=6379
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_HOST=db
+      - NEXTCLOUD_ADMIN_USER=${NEXTCLOUD_ADMIN_USER}
+      - NEXTCLOUD_ADMIN_PASSWORD=${NEXTCLOUD_ADMIN_PASSWORD}
+      - NEXTCLOUD_TRUSTED_DOMAINS=${NEXTCLOUD_DOMAIN}
+      - PHP_MEMORY_LIMIT=2048M
+      - PHP_OPCACHE_ENABLE=1
+      - PHP_OPCACHE_ENABLE_CLI=1
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      onlyoffice:
+        condition: service_healthy
+    networks:
+      - internal
+    healthcheck:
+      test: [ "CMD-SHELL", "su -s /bin/sh www-data -c 'php /var/www/html/occ status | grep -q true'" ]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 15s
+
+  nginx:
+    image: nginx:alpine
+    restart: always
+    volumes:
+      - nextcloud:/var/www/html:ro
+      - logs:/var/log/nginx
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./nextcloud.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      cloud:
+        condition: service_healthy
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.${PROJECT_NAME}.rule=Host(`${NEXTCLOUD_DOMAIN}`)
+      - traefik.http.services.${PROJECT_NAME}.loadbalancer.server.port=80
+      - traefik.http.middlewares.${PROJECT_NAME}_redirect.redirectregex.regex=^https://www\.(.*)
+      - traefik.http.middlewares.${PROJECT_NAME}_redirect.redirectregex.replacement=https://$${1}
+      - traefik.http.middlewares.${PROJECT_NAME}_redirect.redirectregex.permanent=true
+      - traefik.http.middlewares.${PROJECT_NAME}-header.headers.frameDeny=true
+      - traefik.http.middlewares.${PROJECT_NAME}-header.headers.contentTypeNosniff=true
+      - traefik.http.middlewares.${PROJECT_NAME}-header.headers.stsIncludeSubdomains=true
+      - traefik.http.middlewares.${PROJECT_NAME}-header.headers.stsPreload=true
+      - traefik.http.middlewares.${PROJECT_NAME}-header.headers.stsSeconds=31536000
+      - traefik.http.middlewares.${PROJECT_NAME}-header.headers.referrerPolicy=same-origin
+      - traefik.http.middlewares.${PROJECT_NAME}-header.headers.browserXssFilter=true
+      - traefik.http.middlewares.${PROJECT_NAME}-header.headers.customRequestHeaders.X-Forwarded-Proto=https
+      - traefik.http.middlewares.${PROJECT_NAME}-header.headers.customFrameOptionsValue=SAMEORIGIN
+      - traefik.http.middlewares.${PROJECT_NAME}-well-known.redirectregex.regex=^https://(.*)/.well-known/(card|cal)dav
+      - traefik.http.middlewares.${PROJECT_NAME}-well-known.redirectregex.replacement=https://$${1}/remote.php/dav
+      - traefik.http.middlewares.${PROJECT_NAME}-well-known.redirectregex.permanent=true
+      - traefik.http.routers.${PROJECT_NAME}.middlewares=${PROJECT_NAME}_redirect,${PROJECT_NAME}-header,${PROJECT_NAME}-well-known,ratelimit,inflightreq,circuitbreaker,crowdsec-bouncer
+    networks:
+      - internal
+      - proxy
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   cron:
     image: nextcloud:fpm-alpine
@@ -182,9 +180,8 @@ services:
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_HOST=db
     depends_on:
-      - db
-      - redis
-      - cloud
+      nginx:
+        condition: service_healthy
     networks:
       - internal
 
