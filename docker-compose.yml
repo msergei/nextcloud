@@ -157,12 +157,6 @@ services:
     networks:
       - internal
       - proxy
-    healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost"]
-      interval: 15s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
 
   cron:
     image: nextcloud:fpm-alpine
