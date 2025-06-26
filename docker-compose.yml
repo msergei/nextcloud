@@ -174,8 +174,7 @@ services:
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_HOST=db
     depends_on:
-      nginx:
-        condition: service_healthy
+      - nginx
     networks:
       - internal
 
