@@ -79,7 +79,7 @@ services:
       - traefik.http.middlewares.${PROJECT_NAME}-office-headers.headers.customResponseHeaders.Content-Security-Policy=frame-ancestors 'self' https://${NEXTCLOUD_DOMAIN}
       - traefik.http.middlewares.${PROJECT_NAME}-office-redirect.redirectscheme.scheme=https
       - traefik.http.middlewares.${PROJECT_NAME}-office-redirect.redirectscheme.permanent=true
-      - traefik.http.routers.${PROJECT_NAME}-office.middlewares=${PROJECT_NAME}-office-headers
+      - traefik.http.routers.${PROJECT_NAME}-office.middlewares=${PROJECT_NAME}-office-headers,${PROJECT_NAME}-office-redirect,ratelimit,inflightreq,circuitbreaker,crowdsec-bouncer
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost/healthcheck"] # OnlyOffice поддерживает healthcheck эндпоинт
       interval: 30s
