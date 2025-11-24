@@ -74,7 +74,6 @@ services:
       - traefik.http.routers.${PROJECT_NAME}-office-http.entrypoints=web
       - traefik.http.routers.${PROJECT_NAME}-office-http.middlewares=${PROJECT_NAME}-office-redirect
       - traefik.http.middlewares.${PROJECT_NAME}-office-headers.headers.customRequestHeaders.X-Forwarded-Proto=https
-      - traefik.http.middlewares.${PROJECT_NAME}-office-headers.headers.customRequestHeaders.X-Forwarded-For=$${remoteip}
       - traefik.http.middlewares.${PROJECT_NAME}-office-headers.headers.customResponseHeaders.X-Frame-Options=SAMEORIGIN
       - traefik.http.middlewares.${PROJECT_NAME}-office-headers.headers.customResponseHeaders.Content-Security-Policy=frame-ancestors 'self' https://${NEXTCLOUD_DOMAIN}
       - traefik.http.middlewares.${PROJECT_NAME}-office-redirect.redirectscheme.scheme=https
