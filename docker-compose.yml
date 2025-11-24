@@ -45,7 +45,6 @@ services:
 
   onlyoffice:
     image: onlyoffice/documentserver:latest
-    container_name: onlyoffice
     restart: always
     environment:
       - JWT_ENABLED=true
@@ -123,8 +122,6 @@ services:
       timeout: 10s
       retries: 10
       start_period: 15s
-    extra_hosts:
-      - "office.decy.eu:onlyoffice"
 
   nginx:
     image: nginx:alpine
