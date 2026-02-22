@@ -139,7 +139,6 @@ services:
       - traefik.http.middlewares.${PROJECT_NAME}_redirect.redirectregex.regex=^https://www\.(.*)
       - traefik.http.middlewares.${PROJECT_NAME}_redirect.redirectregex.replacement=https://$${1}
       - traefik.http.middlewares.${PROJECT_NAME}_redirect.redirectregex.permanent=true
-      - traefik.http.middlewares.${PROJECT_NAME}-header.headers.frameDeny=true
       - traefik.http.middlewares.${PROJECT_NAME}-header.headers.contentTypeNosniff=true
       - traefik.http.middlewares.${PROJECT_NAME}-header.headers.stsIncludeSubdomains=true
       - traefik.http.middlewares.${PROJECT_NAME}-header.headers.stsPreload=true
