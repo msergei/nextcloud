@@ -64,9 +64,9 @@ docker compose run --rm -u 82 cloud sh -c "php /var/www/html/occ config:system:s
 log_info "Setting OnlyOffice Document Server URL..."
 docker compose run --rm -u 82 cloud sh -c "php /var/www/html/occ config:app:set onlyoffice DocumentServerUrl --value='https://$OFFICE_DOMAIN/'"
 
-# Remove internal URL if exists (for separate deployments)
-log_info "Removing internal URL (using external URL only)..."
-docker compose run --rm -u 82 cloud sh -c "php /var/www/html/occ config:app:delete onlyoffice DocumentServerInternalUrl" 2>/dev/null || true
+# Use Docker DNS internally so the integration does not depend on NAT loopback.
+log_info "Setting internal Document Server URL..."
+docker compose run --rm -u 82 cloud sh -c "php /var/www/html/occ config:app:set onlyoffice DocumentServerInternalUrl --value='http://onlyoffice/'"
 
 # Configure JWT settings
 log_info "Setting JWT secret..."
@@ -78,14 +78,21 @@ log_info "Configuring SSL settings..."
 docker compose run --rm -u 82 cloud sh -c "php /var/www/html/occ config:app:set onlyoffice verify_peer_off --value=true"
 
 # Configure storage URL (for file access)
-log_info "Setting storage URL..."
-docker compose run --rm -u 82 cloud sh -c "php /var/www/html/occ config:app:set onlyoffice StorageUrl --value='https://$NEXTCLOUD_DOMAIN/'"
+log_info "Setting internal storage URL..."
+docker compose run --rm -u 82 cloud sh -c "php /var/www/html/occ config:app:set onlyoffice StorageUrl --value='http://nginx/'"
 
 # Add OnlyOffice domain to trusted domains
 log_info "Adding OnlyOffice domain to trusted domains..."
-DOMAIN_COUNT=$(docker compose run --rm -u 82 cloud sh -c "php /var/www/html/occ config:system:get trusted_domains | wc -l" 2>/dev/null || echo "0")
-NEXT_INDEX=$((DOMAIN_COUNT))
-docker compose run --rm -u 82 cloud sh -c "php /var/www/html/occ config:system:set trusted_domains $NEXT_INDEX --value='$OFFICE_DOMAIN'"
+if ! docker compose run --rm -u 82 cloud sh -c "php /var/www/html/occ config:system:get trusted_domains" 2>/dev/null | grep -Fxq "$OFFICE_DOMAIN"; then
+    DOMAIN_COUNT=$(docker compose run --rm -u 82 cloud sh -c "php /var/www/html/occ config:system:get trusted_domains | wc -l" 2>/dev/null || echo "0")
+    docker compose run --rm -u 82 cloud sh -c "php /var/www/html/occ config:system:set trusted_domains $DOMAIN_COUNT --value='$OFFICE_DOMAIN'"
+fi
+
+# OnlyOffice reaches Nextcloud through the internal nginx service name.
+if ! docker compose run --rm -u 82 cloud sh -c "php /var/www/html/occ config:system:get trusted_domains" 2>/dev/null | grep -Fxq nginx; then
+    DOMAIN_COUNT=$(docker compose run --rm -u 82 cloud sh -c "php /var/www/html/occ config:system:get trusted_domains | wc -l" 2>/dev/null || echo "0")
+    docker compose run --rm -u 82 cloud sh -c "php /var/www/html/occ config:system:set trusted_domains $DOMAIN_COUNT --value='nginx'"
+fi
 
 # Test connection
 log_info "Testing OnlyOffice connection..."
@@ -102,6 +109,10 @@ fi
 log_info "Current OnlyOffice configuration:"
 echo "Document Server URL:"
 docker compose run --rm -u 82 cloud sh -c "php /var/www/html/occ config:app:get onlyoffice DocumentServerUrl"
+echo "Internal Document Server URL:"
+docker compose run --rm -u 82 cloud sh -c "php /var/www/html/occ config:app:get onlyoffice DocumentServerInternalUrl"
+echo "Internal storage URL:"
+docker compose run --rm -u 82 cloud sh -c "php /var/www/html/occ config:app:get onlyoffice StorageUrl"
 echo "JWT Secret configured: $([ -n "$(docker compose run --rm -u 82 cloud sh -c "php /var/www/html/occ config:app:get onlyoffice jwt_secret" 2>/dev/null)" ] && echo "Yes" || echo "No")"
 echo "SSL verification: $(docker compose run --rm -u 82 cloud sh -c "php /var/www/html/occ config:app:get onlyoffice verify_peer_off" 2>/dev/null || echo "default")"
 
