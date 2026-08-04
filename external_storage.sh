@@ -86,7 +86,13 @@ if [ -n "$BOOKS_ID" ]; then
     
     # Optional: Set priority (higher number = higher priority)
     docker compose run --rm -u 82 cloud sh -c "php /var/www/html/occ files_external:option $BOOKS_ID priority 100"
-    
+
+    # Books land on disk from outside Nextcloud, so it must be told to notice
+    # changes it did not make itself. Without this (default 0 = never check)
+    # new files stay invisible until an explicit occ files:scan.
+    log_info "Enabling filesystem change detection for outside writes..."
+    docker compose run --rm -u 82 cloud sh -c "php /var/www/html/occ config:system:set filesystem_check_changes --type integer --value=1"
+
 else
     log_error "Failed to create Books storage"
     log_error "Output: $CREATE_OUTPUT"

@@ -1,0 +1,7 @@
+# busybox crond table for the `cron` service (runs as www-data).
+# Nextcloud background jobs.
+*/5 * * * * php -f /var/www/html/cron.php
+# Safety net for the /Books external storage: files land there from outside
+# Nextcloud, and filesystem_check_changes=1 only notices them when a user
+# browses the folder. An hourly scan picks up anything nobody opened.
+30 * * * * php -f /var/www/html/occ files:scan --all --quiet
