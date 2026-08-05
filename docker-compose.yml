@@ -89,6 +89,7 @@ services:
     volumes:
       - nextcloud:/var/www/html
       - ./nextcloud.ini:/usr/local/etc/php/conf.d/nextcloud.ini:ro
+      - ./zz-opcache.ini:/usr/local/etc/php/conf.d/zz-opcache.ini:ro
       - ./php.ini:/usr/local/etc/php-fpm.d/www.conf:ro
     environment:
       - REDIS_HOST=redis
@@ -168,6 +169,7 @@ services:
     volumes:
       - nextcloud:/var/www/html
       - ./nextcloud.ini:/usr/local/etc/php/conf.d/nextcloud.ini:ro
+      - ./zz-opcache.ini:/usr/local/etc/php/conf.d/zz-opcache.ini:ro
       - ./php.ini:/usr/local/etc/php-fpm.d/www.conf:ro
       - ./crontab:/crontab.conf:ro
     # busybox crond silently ignores a bind-mounted crontab (wrong owner), so it
